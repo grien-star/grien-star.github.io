@@ -1,0 +1,1658 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light" />
+  <title>GradeVerify — Automated Grade Verification (Form 137/138)</title>
+
+  <!-- Google Fonts (distinct display + readable body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500,650,750&family=Inter:wght@300..900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      /* Swiss/Institutional with warm ink */
+      --bg: #fbfaf7;
+      --paper: #ffffff;
+      --ink: #111116;
+      --muted: rgba(17,17,22,.68);
+      --soft: rgba(17,17,22,.08);
+      --soft2: rgba(17,17,22,.12);
+
+      --brand: #0f5b4f;       /* deep teal (trust) */
+      --brand2:#8a5b13;       /* academic gold (accent) */
+      --accent:#b42318;       /* red for mismatches */
+      --ok:#067647;           /* green for matches */
+      --warn:#b54708;         /* amber for warnings */
+
+      --radius-xl: 28px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+
+      --shadow: 0 18px 45px rgba(17,17,22,.08);
+      --shadow2: 0 10px 25px rgba(17,17,22,.10);
+
+      --grid-gap: clamp(14px, 2.2vw, 22px);
+      --max: 1160px;
+
+      --h1: clamp(2.25rem, 4.6vw, 4rem);
+      --h2: clamp(1.3rem, 2.2vw, 1.85rem);
+      --h3: clamp(1.05rem, 1.6vw, 1.2rem);
+      --p: clamp(0.98rem, 1.15vw, 1.05rem);
+
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Ubuntu, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      color:var(--ink);
+      background: var(--bg);
+      overflow-x:hidden;
+      line-height:1.45;
+      letter-spacing: -0.01em;
+    }
+
+    /* Subtle institutional background texture */
+    .bg{
+      position:fixed; inset:0;
+      pointer-events:none;
+      z-index:-1;
+      background:
+        radial-gradient(900px 500px at 12% 10%, rgba(15,91,79,.12), transparent 60%),
+        radial-gradient(700px 420px at 85% 16%, rgba(138,91,19,.12), transparent 60%),
+        radial-gradient(900px 600px at 58% 88%, rgba(17,17,22,.06), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,0));
+      filter: saturate(1.05);
+    }
+    .gridlines{
+      position:fixed; inset:-2px;
+      pointer-events:none;
+      z-index:-1;
+      opacity:.25;
+      background:
+        linear-gradient(to right, rgba(17,17,22,.06) 1px, transparent 1px) 0 0 / 54px 54px,
+        linear-gradient(to bottom, rgba(17,17,22,.05) 1px, transparent 1px) 0 0 / 54px 54px;
+      mask: radial-gradient(65% 55% at 50% 20%, #000 40%, transparent 80%);
+    }
+
+    a{ color:inherit; text-decoration:none; }
+    .wrap{
+      width:min(var(--max), calc(100% - 40px));
+      margin-inline:auto;
+    }
+
+    /* Top nav */
+    header{
+      position:sticky; top:0;
+      z-index:50;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      background: color-mix(in srgb, var(--bg) 72%, white 28%);
+      border-bottom: 1px solid var(--soft);
+    }
+    .nav{
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 14px 0;
+      gap:14px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:12px;
+      min-width: 220px;
+    }
+    .mark{
+      width:40px; height:40px;
+      border-radius: 12px;
+      box-shadow: inset 0 0 0 1px rgba(17,17,22,.12), var(--shadow2);
+      background:
+        radial-gradient(12px 12px at 28% 30%, rgba(255,255,255,.9), transparent 65%),
+        conic-gradient(from 210deg, rgba(15,91,79,.95), rgba(138,91,19,.92), rgba(15,91,79,.95));
+      position:relative;
+      overflow:hidden;
+    }
+    .mark:after{
+      content:"";
+      position:absolute; inset:8px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.75);
+      box-shadow: inset 0 0 0 1px rgba(17,17,22,.1);
+      mask:
+        radial-gradient(10px 10px at 30% 35%, transparent 60%, #000 61%),
+        linear-gradient(#000,#000);
+      opacity:.8;
+    }
+    .brand strong{
+      font-family: Fraunces, serif;
+      font-weight: 750;
+      letter-spacing:-0.02em;
+      font-size: 1.08rem;
+      display:block;
+      line-height:1.05;
+    }
+    .brand span{
+      display:block;
+      font-size:.82rem;
+      color:var(--muted);
+      margin-top:2px;
+    }
+    nav ul{
+      list-style:none; padding:0; margin:0;
+      display:flex; align-items:center; gap:18px;
+      color: color-mix(in srgb, var(--ink) 74%, transparent);
+      font-size:.95rem;
+    }
+    nav a{
+      padding:10px 10px;
+      border-radius: 999px;
+      transition: background .2s ease, transform .2s ease;
+    }
+    nav a:hover{
+      background: rgba(17,17,22,.06);
+      transform: translateY(-1px);
+    }
+    .nav-cta{
+      display:flex; align-items:center; gap:10px;
+    }
+
+    .btn{
+      border:0;
+      border-radius: 999px;
+      padding: 11px 14px;
+      font-weight: 650;
+      letter-spacing: -0.01em;
+      cursor:pointer;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
+      display:inline-flex; align-items:center; gap:10px;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn:active{ transform: translateY(1px) scale(.99); }
+    .btn.primary{
+      background: linear-gradient(180deg, color-mix(in srgb, var(--brand) 92%, white 8%), var(--brand));
+      color: #fff;
+      box-shadow: 0 14px 30px rgba(15,91,79,.18);
+    }
+    .btn.primary:hover{ transform: translateY(-1px); box-shadow: 0 18px 40px rgba(15,91,79,.22); }
+    .btn.ghost{
+      background: rgba(255,255,255,.65);
+      color: var(--ink);
+      box-shadow: inset 0 0 0 1px rgba(17,17,22,.12);
+    }
+    .btn.ghost:hover{ background: rgba(255,255,255,.9); transform: translateY(-1px); }
+
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.7);
+      box-shadow: inset 0 0 0 1px rgba(17,17,22,.10);
+      font-size:.86rem;
+      color: color-mix(in srgb, var(--ink) 78%, transparent);
+    }
+    .dot{
+      width:8px; height:8px; border-radius:999px;
+      background: var(--brand);
+      box-shadow: 0 0 0 4px rgba(15,91,79,.12);
+    }
+
+    /* Hero */
+    .hero{
+      padding: clamp(28px, 4vw, 52px) 0 22px;
+    }
+    .hero-grid{
+      display:grid;
+      grid-template-columns: 1.25fr .85fr;
+      gap: var(--grid-gap);
+      align-items: start;
+    }
+    .hero h1{
+      font-family: Fraunces, serif;
+      font-size: var(--h1);
+      line-height: 1.03;
+      margin: 12px 0 14px;
+      letter-spacing:-0.03em;
+    }
+    .hero p{
+      font-size: var(--p);
+      color: var(--muted);
+      margin: 0 0 18px;
+      max-width: 62ch;
+    }
+    .hero-actions{
+      display:flex; flex-wrap:wrap;
+      gap: 10px;
+      align-items:center;
+      margin-top: 14px;
+    }
+
+    .spec{
+      margin-top: 16px;
+      display:flex; flex-wrap:wrap; gap:10px;
+    }
+    .spec .pill{
+      background: color-mix(in srgb, var(--paper) 55%, transparent);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .spec kbd{
+      font-family: var(--mono);
+      font-size:.82rem;
+      padding: 2px 6px;
+      border-radius: 8px;
+      background: rgba(17,17,22,.06);
+      box-shadow: inset 0 0 0 1px rgba(17,17,22,.08);
+    }
+
+    /* Right side: verification console */
+    .console{
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,255,255,.65));
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(17,17,22,.10);
+      overflow:hidden;
+      position:relative;
+    }
+    .console:before{
+      content:"";
+      position:absolute; inset:0;
+      background:
+        radial-gradient(500px 220px at 30% 0%, rgba(15,91,79,.13), transparent 60%),
+        radial-gradient(520px 260px at 100% 30%, rgba(138,91,19,.12), transparent 55%);
+      pointer-events:none;
+    }
+    .console-top{
+      position:relative;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(17,17,22,.08);
+      background: rgba(255,255,255,.55);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .console-title{
+      display:flex; align-items:center; gap:10px;
+      min-width: 0;
+    }
+    .lights{
+      display:flex; gap:7px;
+    }
+    .lights i{
+      width:10px; height:10px; border-radius:999px; display:inline-block;
+      background: rgba(17,17,22,.18);
+      box-shadow: inset 0 0 0 1px rgba(17,17,22,.14);
+    }
+    .console-title strong{
+      font-size:.95rem;
+      letter-spacing:-0.01em;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .console-title small{
+      display:block;
+      color: var(--muted);
+      font-size:.82rem;
+      margin-top:2px;
+    }
+    .console-body{
+      position:relative;
+      padding: 14px 16px 16px;
+      display:grid;
+      gap: 12px;
+    }
+
+    .mini-grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .field{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    label{
+      font-size:.86rem;
+      color: color-mix(in srgb, var(--ink) 80%, transparent);
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px;
+    }
+    .hint{
+      font-size:.78rem;
+      color: var(--muted);
+      display:inline-flex; align-items:center; gap:8px;
+    }
+    .hint .badge{
+      font-family: var(--mono);
+      font-size:.72rem;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(17,17,22,.06);
+      box-shadow: inset 0 0 0 1px rgba(17,17,22,.08);
+    }
+
+    textarea, input, select{
+      width:100%;
+      border-radius: 14px;
+      border: 1px solid rgba(17,17,22,.14);
+      background: rgba(255,255,255,.75);
+      padding: 12px 12px;
+      font: inherit;
+      color: var(--ink);
+      outline: none;
+      box-shadow: 0 10px 20px rgba(17,17,22,.06);
+      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease, background .18s ease;
+    }
+    textarea{
+      min-height: 120px;
+      resize: vertical;
+      font-family: var(--mono);
+      font-size: .9rem;
+      line-height: 1.35;
+    }
+    input:focus, textarea:focus, select:focus{
+      border-color: color-mix(in srgb, var(--brand) 60%, rgba(17,17,22,.14));
+      box-shadow: 0 16px 34px rgba(15,91,79,.12);
+      background: rgba(255,255,255,.9);
+      transform: translateY(-1px);
+    }
+
+    .console-actions{
+      display:flex; flex-wrap:wrap; gap:10px;
+      align-items:center; justify-content:space-between;
+      padding-top: 2px;
+    }
+    .actions-left{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .actions-right{ display:flex; gap:10px; align-items:center; }
+
+    .toggle{
+      display:flex; align-items:center; gap:10px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.65);
+      box-shadow: inset 0 0 0 1px rgba(17,17,22,.12);
+      font-size:.9rem;
+      color: color-mix(in srgb, var(--ink) 78%, transparent);
+      user-select:none;
+      cursor:pointer;
+    }
+    .switch{
+      width:42px; height:24px;
+      border-radius: 999px;
+      background: rgba(17,17,22,.18);
+      position:relative;
+      box-shadow: inset 0 0 0 1px rgba(17,17,22,.12);
+      transition: background .18s ease;
+    }
+    .switch:after{
+      content:"";
+      width:18px; height:18px;
+      border-radius: 999px;
+      background: #fff;
+      position:absolute; top:3px; left:3px;
+      box-shadow: 0 6px 14px rgba(17,17,22,.18);
+      transition: transform .18s ease;
+    }
+    .toggle[data-on="true"] .switch{ background: rgba(15,91,79,.55); }
+    .toggle[data-on="true"] .switch:after{ transform: translateX(18px); }
+
+    /* Results strip */
+    .results{
+      margin-top: 10px;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(17,17,22,.10);
+      background: rgba(255,255,255,.72);
+      overflow:hidden;
+    }
+    .results-head{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px;
+      padding: 12px 12px;
+      border-bottom: 1px solid rgba(17,17,22,.08);
+      background: rgba(255,255,255,.55);
+    }
+    .results-head strong{
+      font-size:.95rem;
+      letter-spacing:-0.01em;
+    }
+    .score{
+      display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+      justify-content:flex-end;
+      color: var(--muted);
+      font-size:.88rem;
+    }
+    .meter{
+      height: 10px; width: 140px;
+      border-radius: 999px;
+      background: rgba(17,17,22,.08);
+      overflow:hidden;
+      box-shadow: inset 0 0 0 1px rgba(17,17,22,.06);
+    }
+    .meter > i{
+      display:block; height:100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--ok), color-mix(in srgb, var(--ok) 55%, var(--brand2)));
+      border-radius: 999px;
+      transition: width .45s ease;
+    }
+    .log{
+      padding: 10px 12px 12px;
+      display:grid;
+      gap: 10px;
+    }
+    .item{
+      display:grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items:flex-start;
+      padding: 10px 10px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.72);
+      box-shadow: inset 0 0 0 1px rgba(17,17,22,.08);
+    }
+    .sev{
+      width:34px; height:34px;
+      border-radius: 12px;
+      display:grid; place-items:center;
+      font-family: var(--mono);
+      font-weight: 800;
+      font-size:.82rem;
+      box-shadow: 0 10px 20px rgba(17,17,22,.08);
+    }
+    .sev.ok{ background: rgba(6,118,71,.12); color: var(--ok); box-shadow: 0 10px 18px rgba(6,118,71,.12); }
+    .sev.warn{ background: rgba(181,71,8,.14); color: var(--warn); box-shadow: 0 10px 18px rgba(181,71,8,.12); }
+    .sev.bad{ background: rgba(180,35,24,.14); color: var(--accent); box-shadow: 0 10px 18px rgba(180,35,24,.12); }
+
+    .item h4{
+      margin: 0;
+      font-size: .95rem;
+      letter-spacing:-0.01em;
+      font-weight: 700;
+    }
+    .item p{
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .meta{
+      margin-top: 8px;
+      display:flex; flex-wrap:wrap; gap:8px;
+      color: color-mix(in srgb, var(--muted) 82%, transparent);
+      font-size: .82rem;
+    }
+    .chip{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(17,17,22,.06);
+      box-shadow: inset 0 0 0 1px rgba(17,17,22,.06);
+      font-family: var(--mono);
+      font-size:.78rem;
+    }
+
+    /* Sections */
+    section{
+      padding: 34px 0;
+    }
+    .section-head{
+      display:flex; align-items:flex-end; justify-content:space-between;
+      gap:18px;
+      margin-bottom: 18px;
+    }
+    .section-head h2{
+      font-family: Fraunces, serif;
+      font-size: var(--h2);
+      margin:0;
+      letter-spacing:-0.02em;
+      line-height:1.12;
+    }
+    .section-head p{
+      margin:0;
+      color: var(--muted);
+      max-width: 62ch;
+      font-size: var(--p);
+    }
+
+    /* Bento (no generic cards; these are content blocks) */
+    .bento{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: var(--grid-gap);
+      align-items:stretch;
+    }
+    .panel{
+      border-radius: var(--radius-xl);
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(17,17,22,.10);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+    .panel .inner{
+      padding: 18px 18px;
+      display:grid;
+      gap: 12px;
+      position:relative;
+    }
+    .panel h3{
+      margin:0;
+      font-size: var(--h3);
+      letter-spacing:-0.01em;
+    }
+    .panel p{
+      margin:0;
+      color: var(--muted);
+      font-size: 0.98rem;
+      max-width: 68ch;
+    }
+    .panel .rule{
+      height:1px;
+      background: rgba(17,17,22,.10);
+      margin: 2px 0;
+    }
+
+    .flow{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      align-items:stretch;
+      margin-top: 8px;
+    }
+    .step{
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.75), rgba(255,255,255,.6));
+      box-shadow: inset 0 0 0 1px rgba(17,17,22,.08);
+      padding: 12px 12px;
+      min-height: 106px;
+      display:grid;
+      gap: 8px;
+    }
+    .step .n{
+      font-family: var(--mono);
+      color: color-mix(in srgb, var(--ink) 72%, transparent);
+      font-size:.8rem;
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .step .tag{
+      font-family: var(--mono);
+      font-size:.74rem;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(15,91,79,.10);
+      color: color-mix(in srgb, var(--brand) 85%, black 15%);
+      box-shadow: inset 0 0 0 1px rgba(15,91,79,.12);
+    }
+    .step strong{
+      font-size: .96rem;
+      letter-spacing:-0.01em;
+    }
+    .step span{
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    .side-stack{
+      display:grid;
+      grid-template-rows: auto auto;
+      gap: var(--grid-gap);
+    }
+
+    .audit-list{
+      display:grid;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .audit-row{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items:center;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.64);
+      box-shadow: inset 0 0 0 1px rgba(17,17,22,.08);
+    }
+    .audit-row b{ letter-spacing:-0.01em; }
+    .audit-row small{ display:block; color: var(--muted); margin-top:2px; }
+    .flag{
+      font-family: var(--mono);
+      font-size:.76rem;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(17,17,22,.06);
+      box-shadow: inset 0 0 0 1px rgba(17,17,22,.08);
+      color: color-mix(in srgb, var(--ink) 74%, transparent);
+      white-space:nowrap;
+    }
+    .flag.ok{ background: rgba(6,118,71,.10); color: var(--ok); box-shadow: inset 0 0 0 1px rgba(6,118,71,.18); }
+    .flag.bad{ background: rgba(180,35,24,.10); color: var(--accent); box-shadow: inset 0 0 0 1px rgba(180,35,24,.18); }
+    .flag.warn{ background: rgba(181,71,8,.10); color: var(--warn); box-shadow: inset 0 0 0 1px rgba(181,71,8,.18); }
+
+    /* Footer */
+    footer{
+      padding: 30px 0 40px;
+      border-top: 1px solid var(--soft);
+      color: color-mix(in srgb, var(--ink) 78%, transparent);
+    }
+    .foot{
+      display:flex; flex-wrap:wrap;
+      align-items:flex-start; justify-content:space-between;
+      gap: 18px;
+    }
+    .foot small{ color: var(--muted); display:block; margin-top:8px; max-width: 70ch; }
+    .foot-links{
+      display:flex; gap:10px; flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .foot-links a{
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.55);
+      box-shadow: inset 0 0 0 1px rgba(17,17,22,.10);
+    }
+    .foot-links a:hover{ background: rgba(255,255,255,.85); }
+
+    /* Reveal animations */
+    .reveal{
+      opacity:0;
+      transform: translateY(12px);
+      animation: rise .7s cubic-bezier(.2,.85,.2,1) forwards;
+    }
+    .d1{ animation-delay:.06s; }
+    .d2{ animation-delay:.14s; }
+    .d3{ animation-delay:.22s; }
+    .d4{ animation-delay:.30s; }
+    @keyframes rise{
+      to{ opacity:1; transform: translateY(0); }
+    }
+
+    /* Scroll reveal */
+    .sr{
+      opacity:0;
+      transform: translateY(14px);
+      transition: opacity .65s cubic-bezier(.2,.85,.2,1), transform .65s cubic-bezier(.2,.85,.2,1);
+    }
+    .sr.on{ opacity:1; transform: translateY(0); }
+
+    /* Responsive */
+    @media (max-width: 980px){
+      .hero-grid{ grid-template-columns: 1fr; }
+      .brand{ min-width: unset; }
+      nav ul{ display:none; }
+      .bento{ grid-template-columns: 1fr; }
+      .flow{ grid-template-columns: 1fr; }
+      .meter{ width: 120px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="bg" aria-hidden="true"></div>
+  <div class="gridlines" aria-hidden="true"></div>
+
+  <header>
+    <div class="wrap nav">
+      <a class="brand" href="#top" aria-label="GradeVerify home">
+        <div class="mark" aria-hidden="true"></div>
+        <div>
+          <strong>GradeVerify</strong>
+          <span>Automated verification for Form 137/138</span>
+        </div>
+      </a>
+
+      <nav aria-label="Primary">
+        <ul>
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#checks">Checks</a></li>
+          <li><a href="#demo">Live demo</a></li>
+          <li><a href="#notes">Notes</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-cta">
+        <span class="pill" title="Runs locally in your browser demo">
+          <span class="dot" aria-hidden="true"></span>
+          Offline-ready demo
+        </span>
+        <button class="btn ghost" type="button" id="btnFill">Load sample</button>
+        <button class="btn primary" type="button" id="btnRunTop">
+          Run verification
+          <span aria-hidden="true" style="font-family:var(--mono); font-weight:800; opacity:.9;">↵</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <div class="reveal d1">
+            <span class="pill">
+              <span class="dot" aria-hidden="true"></span>
+              Detect mismatches • rounding issues • missing grades
+            </span>
+          </div>
+
+          <h1 class="reveal d2">
+            Automated grade verification for <em style="font-style:normal; color:var(--brand);">Form 137</em>,
+            <em style="font-style:normal; color:var(--brand2);">Form 138</em>, and final grade summaries.
+          </h1>
+
+          <p class="reveal d3">
+            Paste the grades you encoded from school records and instantly flag inconsistencies:
+            subject names, quarter totals, final averages, scale limits, and cross-form mismatches—presented as an audit trail you can act on.
+          </p>
+
+          <div class="hero-actions reveal d4">
+            <button class="btn primary" type="button" id="btnJumpDemo">Try the verification console</button>
+            <a class="btn ghost" href="#how">See what it checks</a>
+
+            <div class="spec" aria-label="Keyboard tips">
+              <span class="pill"><kbd>Enter</kbd> run</span>
+              <span class="pill"><kbd>Ctrl</kbd> + <kbd>L</kbd> load sample</span>
+              <span class="pill"><kbd>Esc</kbd> clear</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="console reveal d2" id="demo" aria-label="Verification console">
+          <div class="console-top">
+            <div class="console-title">
+              <div class="lights" aria-hidden="true">
+                <i></i><i></i><i></i>
+              </div>
+              <div style="min-width:0">
+                <strong>Verification Console</strong>
+                <small>Paste data • pick grading rules • run checks</small>
+              </div>
+            </div>
+            <span class="pill" title="This is a UI demo. Connect to OCR/DB later.">
+              <span class="dot" aria-hidden="true" style="background:color-mix(in srgb, var(--brand2) 85%, white 15%); box-shadow:0 0 0 4px rgba(138,91,19,.12)"></span>
+              Demo mode
+            </span>
+          </div>
+
+          <div class="console-body">
+            <div class="mini-grid">
+              <div class="field">
+                <label for="ruleSet">
+                  Ruleset
+                  <span class="hint"><span class="badge">policy</span> rounding + range</span>
+                </label>
+                <select id="ruleSet" aria-label="Select verification ruleset">
+                  <option value="ph-basic" selected>PH Basic (0–100, integer, average = rounded)</option>
+                  <option value="ph-decimal">PH Decimal (0–100, allow .25/.5/.75)</option>
+                  <option value="strict">Strict (0–100, integer, no rounding tolerance)</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="form137">
+                  Form 137 (Permanent Record)
+                  <span class="hint"><span class="badge">csv</span> subject,q1,q2,q3,q4,final</span>
+                </label>
+                <textarea id="form137" spellcheck="false" placeholder="Example:
+English, 88, 90, 89, 91, 90
+Math, 84, 86, 85, 87, 86"></textarea>
+              </div>
+
+              <div class="field">
+                <label for="form138">
+                  Form 138 (Report Card)
+                  <span class="hint"><span class="badge">csv</span> subject,q1,q2,q3,q4,final</span>
+                </label>
+                <textarea id="form138" spellcheck="false" placeholder="Example:
+English, 88, 90, 89, 91, 90
+Math, 84, 86, 85, 87, 86"></textarea>
+              </div>
+
+              <div class="field">
+                <label for="summary">
+                  Summary of Final Grades
+                  <span class="hint"><span class="badge">csv</span> subject,final</span>
+                </label>
+                <textarea id="summary" spellcheck="false" placeholder="Example:
+English, 90
+Math, 86"></textarea>
+              </div>
+            </div>
+
+            <div class="console-actions" aria-label="Console actions">
+              <div class="actions-left">
+                <div class="toggle" id="toggleNormalize" role="switch" aria-checked="true" tabindex="0" data-on="true">
+                  <div class="switch" aria-hidden="true"></div>
+                  Normalize subject names
+                </div>
+
+                <div class="toggle" id="toggleTolerance" role="switch" aria-checked="true" tabindex="0" data-on="true">
+                  <div class="switch" aria-hidden="true"></div>
+                  Allow ±1 tolerance
+                </div>
+              </div>
+
+              <div class="actions-right">
+                <button class="btn ghost" type="button" id="btnClear">Clear</button>
+                <button class="btn primary" type="button" id="btnRun">Run verification</button>
+              </div>
+            </div>
+
+            <div class="results" aria-live="polite">
+              <div class="results-head">
+                <strong>Audit results</strong>
+                <div class="score">
+                  <span id="scoreText">Waiting for input</span>
+                  <span class="meter" aria-hidden="true"><i id="meterBar"></i></span>
+                </div>
+              </div>
+              <div class="log" id="log">
+                <div class="item">
+                  <div class="sev warn">i</div>
+                  <div>
+                    <h4>Paste your encoded grades or load the sample.</h4>
+                    <p>This demo checks: missing quarters, final grade mismatch, out-of-range values, and cross-form inconsistencies.</p>
+                    <div class="meta">
+                      <span class="chip">Forms: 137 ↔ 138 ↔ Summary</span>
+                      <span class="chip">Mode: Browser-only</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="how" class="sr">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <h2>How it works</h2>
+            <p>
+              Designed for registrars and advisers: enter what you encoded, and the system produces an audit trail you can attach to your validation workflow.
+            </p>
+          </div>
+        </div>
+
+        <div class="bento">
+          <article class="panel">
+            <div class="inner">
+              <h3>Verification pipeline</h3>
+              <p>
+                A simple, reliable flow that mirrors real-world record checking—without relying on fragile “AI guesswork.”
+              </p>
+              <div class="rule"></div>
+
+              <div class="flow" role="list" aria-label="Verification steps">
+                <div class="step" role="listitem">
+                  <div class="n">
+                    <span>Step 01</span>
+                    <span class="tag">Parse</span>
+                  </div>
+                  <strong>Read rows</strong>
+                  <span>Extract subject + quarter grades + final grade. Flag missing/invalid cells.</span>
+                </div>
+
+                <div class="step" role="listitem">
+                  <div class="n">
+                    <span>Step 02</span>
+                    <span class="tag">Compute</span>
+                  </div>
+                  <strong>Recalculate finals</strong>
+                  <span>Compute final from Q1–Q4 using your ruleset (rounding/tolerance).</span>
+                </div>
+
+                <div class="step" role="listitem">
+                  <div class="n">
+                    <span>Step 03</span>
+                    <span class="tag">Cross-check</span>
+                  </div>
+                  <strong>Compare forms</strong>
+                  <span>Find mismatches between Form 137, Form 138, and the final summary.</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <div class="side-stack">
+            <article class="panel">
+              <div class="inner">
+                <h3>What errors it catches</h3>
+                <p>Common encoding issues that cause delays during evaluation and credential release.</p>
+                <div class="audit-list" role="list">
+                  <div class="audit-row" role="listitem">
+                    <div>
+                      <b>Out-of-range values</b>
+                      <small>e.g., 105, -2, or non-numeric text</small>
+                    </div>
+                    <span class="flag bad">range</span>
+                  </div>
+                  <div class="audit-row" role="listitem">
+                    <div>
+                      <b>Final grade mismatch</b>
+                      <small>final ≠ average(Q1..Q4) under selected policy</small>
+                    </div>
+                    <span class="flag warn">calc</span>
+                  </div>
+                  <div class="audit-row" role="listitem">
+                    <div>
+                      <b>Cross-form mismatch</b>
+                      <small>Form 137 final differs from Form 138 or Summary</small>
+                    </div>
+                    <span class="flag bad">consistency</span>
+                  </div>
+                  <div class="audit-row" role="listitem">
+                    <div>
+                      <b>Missing quarters</b>
+                      <small>one or more quarters blank / not provided</small>
+                    </div>
+                    <span class="flag warn">completeness</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="inner">
+                <h3>Privacy-first by design</h3>
+                <p>
+                  This front-end demo runs entirely in the browser. For production, you can connect to your OCR pipeline or SIS/Registrar database while keeping
+                  logs and access controls aligned to your institution’s policy.
+                </p>
+                <div class="meta">
+                  <span class="chip">No external images</span>
+                  <span class="chip">Accessible UI</span>
+                  <span class="chip">Audit trail</span>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="checks" class="sr">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <h2>Checks & rules (customizable)</h2>
+            <p>
+              Configure to match your grading policy: integer vs decimal inputs, rounding methods, and acceptable tolerance for transcription differences.
+            </p>
+          </div>
+        </div>
+
+        <div class="bento">
+          <article class="panel">
+            <div class="inner">
+              <h3>Rules supported in this demo</h3>
+              <p>
+                Choose a ruleset in the console to see how verification changes. In real deployments, these can be tied to grade-level, school year, or district policy.
+              </p>
+              <div class="rule"></div>
+
+              <div class="audit-list" role="list" aria-label="Supported rules">
+                <div class="audit-row" role="listitem">
+                  <div>
+                    <b>Range validation</b>
+                    <small>All grades must be within 0–100</small>
+                  </div>
+                  <span class="flag ok">enabled</span>
+                </div>
+                <div class="audit-row" role="listitem">
+                  <div>
+                    <b>Final recomputation</b>
+                    <small>final = average(Q1–Q4) with rounding policy</small>
+                  </div>
+                  <span class="flag ok">enabled</span>
+                </div>
+                <div class="audit-row" role="listitem">
+                  <div>
+                    <b>Subject normalization</b>
+                    <small>e.g., “English” ≈ “ENGLISH”, extra spaces, punctuation</small>
+                  </div>
+                  <span class="flag warn">optional</span>
+                </div>
+                <div class="audit-row" role="listitem">
+                  <div>
+                    <b>Tolerance</b>
+                    <small>Accept ±1 difference for cross-form mismatch detection</small>
+                  </div>
+                  <span class="flag warn">optional</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="inner">
+              <h3>Recommended outputs</h3>
+              <p>
+                For production use, export a verification report: issues per subject, severity, suggested fix, and reviewer sign-off.
+              </p>
+              <div class="rule"></div>
+              <div class="audit-list" role="list" aria-label="Recommended outputs">
+                <div class="audit-row" role="listitem">
+                  <div>
+                    <b>Issue list</b>
+                    <small>“Math: Form 137 final 86 vs computed 85”</small>
+                  </div>
+                  <span class="flag">audit</span>
+                </div>
+                <div class="audit-row" role="listitem">
+                  <div>
+                    <b>Summary score</b>
+                    <small>Confidence indicator (not AI), based on passed checks</small>
+                  </div>
+                  <span class="flag">score</span>
+                </div>
+                <div class="audit-row" role="listitem">
+                  <div>
+                    <b>Printable report</b>
+                    <small>Attach to records evaluation or correction request</small>
+                  </div>
+                  <span class="flag">pdf</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="notes" class="sr">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <h2>Implementation notes</h2>
+            <p>
+              This page is a polished front-end prototype. Hook points are included for OCR ingestion, database checks, and exporting formal reports.
+            </p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="inner">
+            <h3>Production integration checklist</h3>
+            <p>
+              Connect inputs to your workflow: scanned Form 137/138 OCR → structured rows → verification → reviewer queue → report export.
+            </p>
+            <div class="rule"></div>
+            <div class="flow" role="list" aria-label="Production checklist">
+              <div class="step" role="listitem">
+                <div class="n"><span>Security</span><span class="tag">Access</span></div>
+                <strong>Role-based control</strong>
+                <span>Registrar-only access, audit logs, and export watermarking.</span>
+              </div>
+              <div class="step" role="listitem">
+                <div class="n"><span>Data</span><span class="tag">Schema</span></div>
+                <strong>Canonical subjects</strong>
+                <span>Master subject table + aliases per curriculum/track.</span>
+              </div>
+              <div class="step" role="listitem">
+                <div class="n"><span>Output</span><span class="tag">Reports</span></div>
+                <strong>Signed verification</strong>
+                <span>Generate PDF/print view with reviewer and timestamp.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="wrap foot">
+      <div>
+        <strong style="font-family:Fraunces, serif; letter-spacing:-0.02em;">GradeVerify</strong>
+        <small>
+          Prototype UI for automated grade verification. Replace CSV paste with OCR extraction / SIS integration as needed.
+          Ensure compliance with your institution’s data privacy policy before processing student records.
+        </small>
+      </div>
+      <div class="foot-links" aria-label="Footer links">
+        <a href="#top">Back to top</a>
+        <a href="#demo">Open console</a>
+        <a href="#checks">Checks</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Utilities
+    const $ = (sel, root=document) => root.querySelector(sel);
+
+    const els = {
+      ruleSet: $("#ruleSet"),
+      form137: $("#form137"),
+      form138: $("#form138"),
+      summary: $("#summary"),
+      log: $("#log"),
+      scoreText: $("#scoreText"),
+      meterBar: $("#meterBar"),
+      toggleNormalize: $("#toggleNormalize"),
+      toggleTolerance: $("#toggleTolerance"),
+      btnRun: $("#btnRun"),
+      btnRunTop: $("#btnRunTop"),
+      btnFill: $("#btnFill"),
+      btnClear: $("#btnClear"),
+      btnJumpDemo: $("#btnJumpDemo")
+    };
+
+    const sample = {
+      form137:
+`English, 88, 90, 89, 91, 90
+Mathematics, 84, 86, 85, 87, 86
+Science, 89, 88, 90, 90, 89
+Araling Panlipunan, 92, 91, 92, 93, 92
+MAPEH, 90, 90, 89, 90, 90
+EPP/TLE, 85, 85, 86, 86, 86`,
+      // introduce a couple mismatches for demo realism
+      form138:
+`English, 88, 90, 89, 91, 90
+Math, 84, 86, 85, 87, 85
+Science, 89, 88, 90, 90, 89
+Araling Panlipunan, 92, 91, 92, 93, 92
+MAPEH, 90, 90, 89, 90, 90
+EPP / TLE, 85, 85, 86, 86, 86`,
+      summary:
+`English, 90
+Math, 86
+Science, 89
+Araling Panlipunan, 92
+MAPEH, 90
+EPP/TLE, 86`
+    };
+
+    function setToggle(el, on){
+      el.dataset.on = on ? "true" : "false";
+      el.setAttribute("aria-checked", on ? "true" : "false");
+    }
+    function toggleToggle(el){
+      setToggle(el, el.dataset.on !== "true");
+    }
+    function isOn(el){ return el.dataset.on === "true"; }
+
+    // Subject normalization (basic but effective)
+    function normSubject(s){
+      return s
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, " ")
+        .replace(/[.,]/g, "")
+        .replace(/\s*\/\s*/g, "/")
+        .replace(/&/g, "and");
+    }
+    function subjectAliasKey(s){
+      const t = normSubject(s);
+      // a few common aliases; extend for your curriculum
+      const map = new Map([
+        ["math", "mathematics"],
+        ["mathematics", "mathematics"],
+        ["epp/tle", "epp/tle"],
+        ["epp / tle", "epp/tle"],
+        ["epp tle", "epp/tle"],
+        ["mapeh", "mapeh"],
+        ["araling panlipunan", "araling panlipunan"],
+        ["ap", "araling panlipunan"],
+        ["english", "english"],
+        ["science", "science"]
+      ]);
+      return map.get(t) ?? t;
+    }
+
+    function parseCSVLike(text, expectedColsMin){
+      const rows = text
+        .split(/\r?\n/)
+        .map(r => r.trim())
+        .filter(Boolean);
+
+      const parsed = [];
+      const errors = [];
+
+      rows.forEach((row, idx) => {
+        const parts = row.split(",").map(p => p.trim());
+        if(parts.length < expectedColsMin){
+          errors.push({
+            type: "format",
+            sev: "warn",
+            title: "Row has too few columns",
+            msg: `Line ${idx+1}: expected at least ${expectedColsMin} columns but got ${parts.length}.`,
+            meta: [`line:${idx+1}`, `raw:${row.slice(0,60)}${row.length>60?"…":""}`]
+          });
+          return;
+        }
+        parsed.push({ line: idx+1, parts });
+      });
+
+      return { parsed, errors };
+    }
+
+    function toNum(x){
+      const v = Number(String(x).replace(/[^\d.-]/g,""));
+      return Number.isFinite(v) ? v : NaN;
+    }
+
+    function roundingPolicy(ruleSet){
+      if(ruleSet === "ph-decimal"){
+        return {
+          allowDecimals: true,
+          roundFinal: (x)=> Math.round(x*4)/4, // quarters .25 increments
+          name: "PH Decimal"
+        };
+      }
+      if(ruleSet === "strict"){
+        return {
+          allowDecimals: false,
+          roundFinal: (x)=> x, // no rounding allowed; must match exact average (still may be .25 etc if inputs are odd)
+          name: "Strict"
+        };
+      }
+      return {
+        allowDecimals: false,
+        roundFinal: (x)=> Math.round(x), // typical rounding
+        name: "PH Basic"
+      };
+    }
+
+    function gradeValid(n, allowDecimals){
+      if(!Number.isFinite(n)) return false;
+      if(n < 0 || n > 100) return false;
+      if(!allowDecimals && !Number.isInteger(n)) return false;
+      // if decimals allowed, accept common .25 increments (demo constraint)
+      if(allowDecimals){
+        const frac = Math.round((n - Math.floor(n))*100)/100;
+        const ok = [0, .25, .5, .75].some(v => Math.abs(frac - v) < 1e-9);
+        return ok || Number.isInteger(n);
+      }
+      return true;
+    }
+
+    function computeFinal(qs, policy){
+      const avg = (qs.reduce((a,b)=>a+b,0))/qs.length;
+      return policy.roundFinal(avg);
+    }
+
+    function buildMapFromForm(text, normalize, policy){
+      const { parsed, errors } = parseCSVLike(text, 6);
+      const map = new Map();
+      const issues = [...errors];
+
+      parsed.forEach(({line, parts})=>{
+        const subjectRaw = parts[0];
+        const key = normalize ? subjectAliasKey(subjectRaw) : subjectRaw.trim();
+
+        const q = [parts[1],parts[2],parts[3],parts[4]].map(toNum);
+        const final = toNum(parts[5]);
+
+        // Missing quarters
+        if(q.some(v => !Number.isFinite(v))){
+          issues.push({
+            type:"missing",
+            sev:"warn",
+            title:"Missing or non-numeric quarter grade",
+            msg:`${subjectRaw}: one or more quarters could not be read as a number.`,
+            meta:[`line:${line}`, `form:row`]
+          });
+        }
+
+        // Validate numbers
+        q.forEach((v,i)=>{
+          if(Number.isFinite(v) && !gradeValid(v, policy.allowDecimals)){
+            issues.push({
+              type:"range",
+              sev:"bad",
+              title:"Quarter grade out of policy",
+              msg:`${subjectRaw}: Q${i+1} = ${v} is not valid for ruleset.`,
+              meta:[`line:${line}`, `q${i+1}:${v}`]
+            });
+          }
+        });
+        if(Number.isFinite(final) && !gradeValid(final, policy.allowDecimals)){
+          issues.push({
+            type:"range",
+            sev:"bad",
+            title:"Final grade out of policy",
+            msg:`${subjectRaw}: Final = ${final} is not valid for ruleset.`,
+            meta:[`line:${line}`, `final:${final}`]
+          });
+        }
+
+        // Compute final if possible
+        let computed = NaN;
+        if(q.every(Number.isFinite)){
+          computed = computeFinal(q, policy);
+        }
+
+        map.set(key, {
+          subjectRaw, key, line,
+          q, final,
+          computed
+        });
+      });
+
+      return { map, issues };
+    }
+
+    function buildMapFromSummary(text, normalize, policy){
+      const { parsed, errors } = parseCSVLike(text, 2);
+      const map = new Map();
+      const issues = [...errors];
+
+      parsed.forEach(({line, parts})=>{
+        const subjectRaw = parts[0];
+        const key = normalize ? subjectAliasKey(subjectRaw) : subjectRaw.trim();
+        const final = toNum(parts[1]);
+
+        if(!Number.isFinite(final)){
+          issues.push({
+            type:"missing",
+            sev:"warn",
+            title:"Missing or non-numeric summary final",
+            msg:`${subjectRaw}: summary final could not be read as a number.`,
+            meta:[`line:${line}`]
+          });
+        } else if(!gradeValid(final, policy.allowDecimals)){
+          issues.push({
+            type:"range",
+            sev:"bad",
+            title:"Summary final out of policy",
+            msg:`${subjectRaw}: Summary final = ${final} is not valid for ruleset.`,
+            meta:[`line:${line}`, `final:${final}`]
+          });
+        }
+
+        map.set(key, { subjectRaw, key, line, final });
+      });
+
+      return { map, issues };
+    }
+
+    function withinTolerance(a,b,tol){
+      if(!Number.isFinite(a) || !Number.isFinite(b)) return false;
+      return Math.abs(a-b) <= tol;
+    }
+
+    function verify(){
+      const policy = roundingPolicy(els.ruleSet.value);
+      const normalize = isOn(els.toggleNormalize);
+      const tolOn = isOn(els.toggleTolerance);
+      const tol = tolOn ? 1 : 0;
+
+      const text137 = els.form137.value.trim();
+      const text138 = els.form138.value.trim();
+      const textSum = els.summary.value.trim();
+
+      const items = [];
+
+      if(!text137 && !text138 && !textSum){
+        renderLog([{
+          sev:"warn",
+          title:"No input provided",
+          msg:"Paste your Form 137, Form 138, and Summary data (or load the sample) to run verification.",
+          meta:[`ruleset:${policy.name}`, `normalize:${normalize}`, `tolerance:±${tol}`]
+        }], 0);
+        return;
+      }
+
+      const a = buildMapFromForm(text137, normalize, policy);
+      const b = buildMapFromForm(text138, normalize, policy);
+      const s = buildMapFromSummary(textSum, normalize, policy);
+
+      items.push(...a.issues, ...b.issues, ...s.issues);
+
+      // Compare computed vs stated final within each form
+      function checkComputed(formName, entry){
+        if(entry.q.every(Number.isFinite) && Number.isFinite(entry.final)){
+          const ok = withinTolerance(entry.final, entry.computed, tol);
+          if(!ok){
+            items.push({
+              sev: tolOn ? "warn" : "bad",
+              title: `Final grade mismatch (${formName})`,
+              msg: `${entry.subjectRaw}: stated final ${entry.final} ≠ computed ${entry.computed} from Q1–Q4 under "${policy.name}".`,
+              meta:[`form:${formName}`, `line:${entry.line}`, `tol:±${tol}`]
+            });
+          }
+        }
+      }
+      a.map.forEach(v=> checkComputed("Form 137", v));
+      b.map.forEach(v=> checkComputed("Form 138", v));
+
+      // Cross-form subject union
+      const keys = new Set([...a.map.keys(), ...b.map.keys(), ...s.map.keys()]);
+
+      keys.forEach((k)=>{
+        const e137 = a.map.get(k);
+        const e138 = b.map.get(k);
+        const esum = s.map.get(k);
+
+        // Missing subjects across sources
+        if(e137 && !e138){
+          items.push({
+            sev:"warn",
+            title:"Subject missing in Form 138",
+            msg:`${e137.subjectRaw}: found in Form 137 but not in Form 138.`,
+            meta:[`subjectKey:${k}`]
+          });
+        }
+        if(e138 && !e137){
+          items.push({
+            sev:"warn",
+            title:"Subject missing in Form 137",
+            msg:`${e138.subjectRaw}: found in Form 138 but not in Form 137.`,
+            meta:[`subjectKey:${k}`]
+          });
+        }
+        if((e137 || e138) && !esum){
+          const name = e137?.subjectRaw ?? e138?.subjectRaw ?? k;
+          items.push({
+            sev:"warn",
+            title:"Subject missing in Summary",
+            msg:`${name}: present in forms but not listed in the Summary of Final Grades.`,
+            meta:[`subjectKey:${k}`]
+          });
+        }
+
+        // Compare finals across sources
+        const f137 = e137?.final;
+        const f138 = e138?.final;
+        const fsum = esum?.final;
+
+        const pairs = [
+          ["Form 137", f137, "Form 138", f138, e137?.subjectRaw ?? e138?.subjectRaw ?? k],
+          ["Form 137", f137, "Summary", fsum, e137?.subjectRaw ?? esum?.subjectRaw ?? k],
+          ["Form 138", f138, "Summary", fsum, e138?.subjectRaw ?? esum?.subjectRaw ?? k]
+        ];
+
+        pairs.forEach(([n1,v1,n2,v2, label])=>{
+          if(Number.isFinite(v1) && Number.isFinite(v2)){
+            const ok = withinTolerance(v1, v2, tol);
+            if(!ok){
+              items.push({
+                sev:"bad",
+                title:`Cross-form mismatch`,
+                msg:`${label}: ${n1} final ${v1} ≠ ${n2} final ${v2}.`,
+                meta:[`subjectKey:${k}`, `tol:±${tol}`]
+              });
+            }
+          }
+        });
+      });
+
+      // If no issues, add success message
+      if(items.length === 0){
+        items.push({
+          sev:"ok",
+          title:"No issues detected",
+          msg:`All checks passed under "${policy.name}" with subject normalization ${normalize ? "ON" : "OFF"} and tolerance ±${tol}.`,
+          meta:[`forms:137/138/summary`]
+        });
+      } else {
+        // Add a summary header item
+        const counts = items.reduce((acc,it)=>{
+          acc[it.sev] = (acc[it.sev]||0)+1;
+          return acc;
+        }, {});
+        items.unshift({
+          sev: (counts.bad ? "bad" : counts.warn ? "warn" : "ok"),
+          title:"Verification completed",
+          msg:`Found ${items.length} item(s): ${counts.bad||0} critical, ${counts.warn||0} warning, ${counts.ok||0} ok.`,
+          meta:[`ruleset:${policy.name}`, `normalize:${normalize}`, `tolerance:±${tol}`]
+        });
+      }
+
+      // Score: based on critical+warn counts
+      const bad = items.filter(i=>i.sev==="bad").length;
+      const warn = items.filter(i=>i.sev==="warn").length;
+      const ok = items.filter(i=>i.sev==="ok").length;
+
+      // Exclude the header from scoring if present
+      const total = Math.max(1, items.length - 1);
+      const penalty = Math.min(1, (bad*1 + warn*0.45) / Math.max(1,total));
+      const score = Math.round((1-penalty)*100);
+
+      renderLog(items, score);
+    }
+
+    function renderLog(items, score){
+      els.log.innerHTML = "";
+      const frag = document.createDocumentFragment();
+
+      items.forEach((it, idx)=>{
+        const row = document.createElement("div");
+        row.className = "item";
+        row.style.animation = "rise .65s cubic-bezier(.2,.85,.2,1) forwards";
+        row.style.opacity = "0";
+        row.style.transform = "translateY(10px)";
+        row.style.animationDelay = (idx * 0.05) + "s";
+
+        const sev = document.createElement("div");
+        sev.className = "sev " + (it.sev || "warn");
+        sev.textContent = (it.sev === "bad") ? "!" : (it.sev === "ok") ? "✓" : "•";
+
+        const body = document.createElement("div");
+        const h = document.createElement("h4");
+        h.textContent = it.title || "Result";
+        const p = document.createElement("p");
+        p.textContent = it.msg || "";
+
+        body.appendChild(h);
+        body.appendChild(p);
+
+        if(it.meta && it.meta.length){
+          const meta = document.createElement("div");
+          meta.className = "meta";
+          it.meta.slice(0,5).forEach(m=>{
+            const chip = document.createElement("span");
+            chip.className = "chip";
+            chip.textContent = m;
+            meta.appendChild(chip);
+          });
+          body.appendChild(meta);
+        }
+
+        row.appendChild(sev);
+        row.appendChild(body);
+        frag.appendChild(row);
+      });
+
+      els.log.appendChild(frag);
+
+      // Score UI
+      if(score === 0 && items.length && items[0].title?.includes("No input")){
+        els.scoreText.textContent = "Waiting for input";
+        els.meterBar.style.width = "0%";
+        return;
+      }
+      els.scoreText.textContent = `Verification score: ${score}%`;
+      els.meterBar.style.width = `${score}%`;
+    }
+
+    function loadSample(){
+      els.form137.value = sample.form137;
+      els.form138.value = sample.form138;
+      els.summary.value = sample.summary;
+      // Set default toggles on for a smooth demo
+      setToggle(els.toggleNormalize, true);
+      setToggle(els.toggleTolerance, true);
+      // Run automatically for delight
+      verify();
+      // Scroll to console on smaller screens
+      $("#demo").scrollIntoView({behavior:"smooth", block:"start"});
+    }
+
+    function clearAll(){
+      els.form137.value = "";
+      els.form138.value = "";
+      els.summary.value = "";
+      renderLog([{
+        sev:"warn",
+        title:"Cleared",
+        msg:"Inputs were cleared. Paste new rows or load the sample to continue.",
+        meta:[`tip: Ctrl+L to load sample`]
+      }], 0);
+      els.form137.focus();
+    }
+
+    // Events
+    els.btnRun.addEventListener("click", verify);
+    els.btnRunTop.addEventListener("click", ()=> { $("#demo").scrollIntoView({behavior:"smooth", block:"start"}); setTimeout(verify, 350); });
+    els.btnFill.addEventListener("click", loadSample);
+    els.btnClear.addEventListener("click", clearAll);
+    els.btnJumpDemo.addEventListener("click", ()=> $("#demo").scrollIntoView({behavior:"smooth", block:"start"}));
+
+    [els.toggleNormalize, els.toggleTolerance].forEach(t=>{
+      t.addEventListener("click", ()=> toggleToggle(t));
+      t.addEventListener("keydown", (e)=>{
+        if(e.key === "Enter" || e.key === " "){
+          e.preventDefault();
+          toggleToggle(t);
+        }
+      });
+    });
+
+    // Keyboard shortcuts
+    window.addEventListener("keydown", (e)=>{
+      const ctrl = e.ctrlKey || e.metaKey;
+      if(e.key === "Enter"){
+        verify();
+      }
+      if(ctrl && (e.key.toLowerCase() === "l")){
+        e.preventDefault();
+        loadSample();
+      }
+      if(e.key === "Escape"){
+        clearAll();
+      }
+    });
+
+    // Scroll reveal
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(en=>{
+        if(en.isIntersecting){
+          en.target.classList.add("on");
+          io.unobserve(en.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll(".sr").forEach(el=> io.observe(el));
+
+    // Initialize toggles
+    setToggle(els.toggleNormalize, true);
+    setToggle(els.toggleTolerance, true);
+  </script>
+</body>
+</html>
